@@ -8,7 +8,10 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import time
-
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from lxml import html
 
 def connect_and_login(usr, password_filename):
     #connertion
@@ -31,15 +34,33 @@ def connect_and_login(usr, password_filename):
     # waiting login
     time.sleep(3)
     return chrome
+def isclickable(e):
+    try:
+        WebDriverWait(chrome, 10).until(EC.element_to_be_clickable(e))
+        return True
+    except :
+        return False
 
-def get_all_post(num):
+def get_all_post(chrome, num):
     posts = []
     while(len(posts) < num):
         # rolling page
         chrome.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+        tree = html.fromstring(chrome.page_source)
         soup = BeautifulSoup(chrome.page_source, 'html.parser')
-        # find post blcok
+        # click See more
+        elements = chrome.find_elements(By.XPATH, "//*[text()='See more']")
+        el = tree.xpath("//*[text()='See more']")
+        
+        for i in range(len(elements)):
+            try:
+                elements[i].click()
+            except :
+                if(el[i].getroottree().getpath(el[i])!="/html/body/div[1]/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div/div/div[1]/div[1]/div[1]/div/div[1]/div[2]/div/div/div/div/span/span"):    
+                    print("missed some content", el[i].getroottree().getpath(el[i]))
+
         posts = soup.find_all("div", class_ = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0") 
+        
         time.sleep(5)
     return posts[:num]
 
@@ -57,18 +78,37 @@ def get_content(post):
         for c in contents_:
             content_ += c.text
     except:
-        content_ = ""
+        pass
+    try:
+        contents2_ = post.find_all("div", class_ = "o9v6fnle cxmmr5t8 oygrvhab hcukyx3x c1et5uql ii04i59q")
+        for c in contents2_:
+            content_ += c.text
+    except:
+        pass
     return content_
 
 
 def get_img_content(post):
+    img_content_ = ""
     try:
         img_content_ = post.find("img")["alt"]
     except:
-        img_content_ = ""
+        pass
+    try:
+        img_content_ += post.find("span", class_ = "a8c37x1j ni8dbmo4 stjgntxs l9j0dhe7 ojkyduve").text
+    except:
+        pass
     return img_content_
 
-def post_decode(posts, author, content, img_content):
+def get_like(post):
+    like_num = ""
+    try:
+        like_num = post.find("span", class_ = "pcp91wgn").text
+    except:
+        pass
+    return like_num
+
+def post_decode(posts, author, content, img_content, like):
     info_list = []
 
     for post in posts:
@@ -82,9 +122,12 @@ def post_decode(posts, author, content, img_content):
         if(content):
             sub_list.append(get_content(post))
         
-        #get img title
+        # get img title/alt
         if(img_content):
             sub_list.append(get_img_content(post))
+        # get number of like
+        if(like):
+            sub_list.append(get_like(post))
         
         info_list.append(sub_list)
         
@@ -98,8 +141,8 @@ if __name__ == '__main__':
     usr = "YOUR EMAIL"
     password_filename = 'mypass.txt'
     chrome = connect_and_login(usr, password_filename)
-    posts = get_all_post(num=20)
-    info_list = post_decode(posts, author=True, content=True, img_content=True)
+    posts = get_all_post(chrome, num=10)
+    info_list = post_decode(posts, author=True, content=True, img_content=True, like=True)
     print(info_list)
 
 
