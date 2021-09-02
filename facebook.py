@@ -114,7 +114,7 @@ def post_decode(posts, author, content, img_content, like):
     for post in posts:
         
         sub_list = []
-        # get uesr/club name
+        # get uesr/group name
         if(author):
             sub_list.append(get_author(post))
         
