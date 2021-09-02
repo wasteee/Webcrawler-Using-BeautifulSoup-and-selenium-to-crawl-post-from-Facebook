@@ -35,7 +35,7 @@ def connect_and_login(usr, password_filename):
 def get_all_post(num):
     posts = []
     while(len(posts) < num):
-        # rollong page
+        # rolling page
         chrome.execute_script("window.scrollTo(0,document.body.scrollHeight)")
         soup = BeautifulSoup(chrome.page_source, 'html.parser')
         # find post blcok
@@ -82,7 +82,7 @@ def post_decode(posts, author, content, img_content):
         if(content):
             sub_list.append(get_content(post))
         
-        #img title
+        #get img title
         if(img_content):
             sub_list.append(get_img_content(post))
         
